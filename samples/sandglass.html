@@ -126,10 +126,10 @@ class SandGlass {
 };
 
 const useDeviceMotion = () => {
-	if (DeviceMotionEvent && DeviceMotionEvent.requestPermission && typeof DeviceMotionEvent.requestPermission === 'function') {
+	if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission && typeof DeviceMotionEvent.requestPermission === 'function') {
 		DeviceMotionEvent.requestPermission()
 	}
-	if (DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && typeof DeviceOrientationEvent.requestPermission === 'function') {
+	if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && typeof DeviceOrientationEvent.requestPermission === 'function') {
 		DeviceOrientationEvent.requestPermission();
 	}
 };
