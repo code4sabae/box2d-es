@@ -5,3 +5,8 @@ Box2DJS
 http://box2d-js.sourceforge.net/  
 
 
+# sample
+
+![sandglass](https://code4sabae.github.io/box2d-es/sample/sandglass.png)  
+[砂時計 / SandGlass](https://code4sabae.github.io/box2d-es/sample/sandglass.html)  
+
