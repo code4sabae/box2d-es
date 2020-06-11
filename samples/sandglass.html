@@ -1,0 +1,142 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>sandglass - box2d-es</title>
+<meta property="og:image" content="sandglass.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script type="module">
+
+import canvasutil from "https://code4fukui.github.io/jigaku/lib/jigaku.mjs";
+import b2 from "https://code4sabae.github.io/box2d-es/box2d.mjs";
+
+class SandGlass {
+	constructor () {
+		const canvas = canvasutil.createFullCanvas();
+		this.createWorld();
+
+		const sw = 200;
+		const sh = 400;
+
+		const hole = 59;
+		const nballs = 700;
+
+		this.createWall(0, 200, 10, 200, 0);
+		this.createWall(200, 200, 10, 200, 0);
+		this.createWall(100, 0, 10, 100, Math.PI / 2);
+		this.createWall(100, 400, 10, 100, Math.PI / 2);
+		
+		this.createWall(75 - hole, 170, 81, 4, Math.PI / 8);
+		this.createWall(200 - 75 + hole, 170, 81, 4, -Math.PI / 8);
+		this.createWall(75 - hole, 232, 81, 4, -Math.PI / 8);
+		this.createWall(200 - 75 + hole, 232, 81, 4, Math.PI / 8);
+
+		for (let i = 0; i < nballs; i++) {
+			this.createBall(20 + 160 * Math.random(), 20 + 130 * Math.random(), 3);
+		}
+
+		canvas.draw = (g, cw, ch) => {
+			g.setColor(255, 255, 255);
+			g.fillRect(0, 0, cw, ch);
+			g.save();
+			const r = Math.min(cw / sw, ch / sh);
+			const offx = (cw - sw * r) / 2;
+			const offy = (ch - sh * r) / 2;
+			g.setTransform(r, 0, 0, r, offx, offy);
+			this.drawWorld(g);
+			g.restore();
+		};
+		const f = () => {
+			this.world.Step(1 / 60, 1);
+			canvas.redraw();
+		};
+		setInterval(f, 1000 / 60);
+
+		canvas.onclick = () => {
+			useDeviceMotion();
+			this.world.m_gravity.y = -this.world.m_gravity.y; // 重力反転
+		};
+
+		window.addEventListener("devicemotion", (e) => {
+			// ball.WakeUp();
+			var xg = e.accelerationIncludingGravity.x;
+			var yg = e.accelerationIncludingGravity.y;
+			this.world.m_gravity.x = xg * 30;
+			this.world.m_gravity.y = -yg * 30;
+		}, true);
+	}
+
+	drawWorld (g) {
+		g.setColor(0, 0, 0);
+		for (let b = this.world.m_bodyList; b; b = b.m_next) {
+			for (let s = b.GetShapeList(); s; s = s.GetNext()) {
+				this.drawShape(g, s);
+			}
+		}
+	}
+
+	drawShape (g, shape) {
+		if (shape.m_type === b2.Shape.e_circleShape) {
+			const circle = shape;
+			const pos = circle.m_position;
+			const r = circle.m_radius;
+			g.drawCircle(pos.x, pos.y, r);
+		} else if (shape.m_type === b2.Shape.e_polyShape) {
+			const poly = shape;
+			const tV = b2.Math.AddVV(poly.m_position, b2.Math.b2MulMV(poly.m_R, poly.m_vertices[0]));
+			g.beginPath();
+			g.moveTo(tV.x, tV.y);
+			for (let i = 0; i < poly.m_vertexCount; i++) {
+				const v = b2.Math.AddVV(poly.m_position, b2.Math.b2MulMV(poly.m_R, poly.m_vertices[i]));
+				g.lineTo(v.x, v.y);
+			}
+			g.lineTo(tV.x, tV.y);
+			g.fill();
+		}
+	}
+	
+	createWorld () {
+		const worldAABB = new b2.AABB();
+		worldAABB.minVertex.Set(-1000, -1000);
+		worldAABB.maxVertex.Set(1000, 1000);
+		const gravity = new b2.Vec2(0, 300);
+		const doSleep = true;
+		this.world = new b2.World(worldAABB, gravity, doSleep);	
+	}
+	
+	createWall (x, y, width, height, angle) {
+		const boxSd = new b2.BoxDef();
+		boxSd.restitution = 0.9; // 反発係数、１で完全反射
+		boxSd.extents.Set(width, height);
+		const boxBd = new b2.BodyDef();
+		boxBd.AddShape(boxSd);
+		boxBd.position.Set(x,y);
+		boxBd.rotation = angle;
+		return this.world.CreateBody(boxBd)
+	}
+	
+	createBall (x, y, r) {
+		const ballSd = new b2.CircleDef();
+		ballSd.radius = r;
+		ballSd.density = 1000; // 密度、重さに関係、設定すると動くようになる
+		ballSd.restitution = 0.1; // 反発係数、１で完全反射
+		// ballSd.friction = ;
+		const ballBd = new b2.BodyDef();
+		ballBd.AddShape(ballSd);
+		ballBd.position.Set(x,y);
+		return this.world.CreateBody(ballBd);
+	};
+};
+
+const useDeviceMotion = () => {
+	if (DeviceMotionEvent && DeviceMotionEvent.requestPermission && typeof DeviceMotionEvent.requestPermission === 'function') {
+		DeviceMotionEvent.requestPermission()
+	}
+	if (DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && typeof DeviceOrientationEvent.requestPermission === 'function') {
+		DeviceOrientationEvent.requestPermission();
+	}
+};
+
+window.onload = () => {
+	new SandGlass();
+};
+</script>
+</head>
+</html>
